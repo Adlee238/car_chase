@@ -2,8 +2,8 @@ import argparse
 import gym
 from collections import deque
 from CarRacingDQNAgent import CarRacingDQNAgent
-from gym_multi_car_racing.common_functions import process_state_image
-from gym_multi_car_racing.common_functions import generate_state_frame_stack_from_queue
+from common_functions import process_state_image
+from common_functions import generate_state_frame_stack_from_queue
 
 RENDER                        = True
 STARTING_EPISODE              = 1
