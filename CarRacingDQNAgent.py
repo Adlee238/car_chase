@@ -1,3 +1,8 @@
+'''
+File: CarRacingDQNAgent.py
+
+The core DQN (Deep Q-Learning/Network ) class. Anything related to the model is placed in here.
+'''
 import random
 import numpy as np
 from collections import deque

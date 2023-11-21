@@ -1,3 +1,8 @@
+'''
+File: common_functions.py
+
+Some functions that will be used in multiple programs will be put in here.
+'''
 import cv2
 import numpy as np
 

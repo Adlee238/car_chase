@@ -1,3 +1,8 @@
+'''
+File: train_model.py
+
+The training program.
+'''
 import argparse
 import gym
 from collections import deque
