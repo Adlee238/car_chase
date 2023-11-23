@@ -8,7 +8,7 @@ import numpy as np
 from collections import deque
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers.legacy import Adam
 
 #retrieved from https://github.com/andywu0913/OpenAI-GYM-CarRacing-DQN/blob/master/CarRacingDQNAgent.py
 class CarRacingDQNAgent:
@@ -50,7 +50,7 @@ class CarRacingDQNAgent:
         model.add(Flatten())
         model.add(Dense(216, activation='relu'))
         model.add(Dense(len(self.action_space), activation=None))
-        model.compile(loss='mean_squared_error', optimizer=Adam(lr=self.learning_rate, epsilon=1e-7))
+        model.compile(loss='mean_squared_error', optimizer=Adam(learning_rate=self.learning_rate, epsilon=1e-7))
         return model
 
     def update_target_model(self):

@@ -9,6 +9,7 @@ from collections import deque
 from CarRacingDQNAgent import CarRacingDQNAgent
 from common_functions import process_state_image
 from common_functions import generate_state_frame_stack_from_queue
+from gym_multi_car_racing import MultiCarRacing
 
 RENDER                        = True
 STARTING_EPISODE              = 1
