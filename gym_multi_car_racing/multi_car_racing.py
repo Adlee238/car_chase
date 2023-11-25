@@ -441,7 +441,7 @@ class MultiCarRacing(gym.Env, EzPickle):
             # self.cars[0].fuel_spent = 0.0
 
             step_reward = self.reward - self.prev_reward
-
+            # TODO: Add reward for getting closer to nearby car
             # Add penalty for driving backward
             for car_id, car in enumerate(self.cars):  # Enumerate through cars
 
@@ -505,7 +505,7 @@ class MultiCarRacing(gym.Env, EzPickle):
                 if abs(x) > PLAYFIELD or abs(y) > PLAYFIELD:
                     done = True
                     step_reward[car_id] = -100
-
+            # TODO: Add STATE WHERE IF COLLISION OCCURS, EPISODE IS TERMINATED
         return self.state, step_reward, done, {}
 
     def render(self, mode='human'):
