@@ -73,6 +73,10 @@ CAR_COLORS = [(0.8, 0.0, 0.0), (0.0, 0.0, 0.8),
 LINE_SPACING = 5     # Starting distance between each pair of cars
 LATERAL_SPACING = 3  # Starting side distance between pairs of cars
 
+# Collision
+X_THRESHOLD = 0.5
+Y_THRESHOLD = 2
+
 # Penalizing backwards driving
 BACKWARD_THRESHOLD = np.pi/2
 K_BACKWARD = 0  # Penalty weight: backwards_penalty = K_BACKWARD * angle_diff  (if angle_diff > BACKWARD_THRESHOLD)
@@ -81,9 +85,12 @@ class FrictionDetector(contactListener):
     def __init__(self, env):
         contactListener.__init__(self)
         self.env = env
+        self.collide = False
     def BeginContact(self, contact):
+        self.collide = True
         self._contact(contact, True)
     def EndContact(self, contact):
+        self.collide = False
         self._contact(contact, False)
     def _contact(self, contact, begin):
         tile = None
@@ -460,7 +467,7 @@ class MultiCarRacing(gym.Env, EzPickle):
                 car_pos_as_point = Point((float(car_pos[:, 0]),
                                           float(car_pos[:, 1])))
 
-
+                print(self.contactListener_keepref.collide)
                 # Compute closest point on track to car position (l2 norm)
                 distance_to_tiles = np.linalg.norm(
                     car_pos - np.array(self.track)[:, 2:], ord=2, axis=1)
@@ -493,6 +500,21 @@ class MultiCarRacing(gym.Env, EzPickle):
                     step_reward[car_id] -= K_BACKWARD * angle_diff
                 else:
                     self.driving_backward[car_id] = False
+                        # Add proximity rewards
+
+            if np.linalg.norm(self.cars[0].hull.linearVelocity) > 0 and len(self.cars) > 1:
+                x0, y0 = self.cars[0].hull.position
+                x1, y1 = self.cars[1].hull.position
+
+                # attempt to detect collision - doesn't work
+                if self.contactListener_keepref.collide and (abs(x0 - x1) <= X_THRESHOLD and abs(y0 - y1) <= Y_THRESHOLD):
+                    done = True
+                
+                # Penalize agent 0 for being far
+                self.reward[0] += (-1 * abs(x0 - x1)) + (-1 * abs(y0 - y1))
+
+                # Penalize agent 1 for being close
+                self.reward[1] += 1 / ((-1 * abs(x0 - x1)) + (-1 * abs(y0 - y1)))
 
             self.prev_reward = self.reward.copy()
             if len(self.track) in self.tile_visited_count:

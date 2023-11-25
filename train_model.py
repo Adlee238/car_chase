@@ -83,7 +83,7 @@ if __name__ == '__main__':
 
             # Extra bonus for the model if it uses full gas
             if actions[0][1] == 1 and actions[0][2] == 0:
-                rewards[0] *= 1.5
+                rewards[0] *= 0.5
 
             total_rewards += rewards
 
