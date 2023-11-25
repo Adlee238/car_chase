@@ -13,7 +13,7 @@ from common_functions import process_state_image
 from common_functions import generate_state_frame_stack_from_queue
 from gym_multi_car_racing import MultiCarRacing
 
-RENDER                        = False   # TODO: changed to False to make it run faster
+RENDER                        = True   # TODO: changed to False to make it run faster
 STARTING_EPISODE              = 1
 ENDING_EPISODE                = 1000
 SKIP_FRAMES                   = 2

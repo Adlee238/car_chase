@@ -448,50 +448,40 @@ class MultiCarRacing(gym.Env, EzPickle):
             # self.cars[0].fuel_spent = 0.0
 
             step_reward = self.reward - self.prev_reward
+            # Original code 
             # Add penalty for driving backward
             for car_id, car in enumerate(self.cars):  # Enumerate through cars
-
                 # Get car speed
                 vel = car.hull.linearVelocity
                 if np.linalg.norm(vel) > 0.5:  # If fast, compute angle with v
                     car_angle = -math.atan2(vel[0], vel[1])
                 else:  # If slow, compute with hull
                     car_angle = car.hull.angle
-
                 # Map angle to [0, 2pi] interval
                 car_angle = (car_angle + (2 * np.pi)) % (2 * np.pi)
-
                 # Retrieve car position
                 car_pos = np.array(car.hull.position).reshape((1, 2))
                 car_pos_as_point = Point((float(car_pos[:, 0]),
                                           float(car_pos[:, 1])))
-
-                print(self.contactListener_keepref.collide)
                 # Compute closest point on track to car position (l2 norm)
                 distance_to_tiles = np.linalg.norm(
                     car_pos - np.array(self.track)[:, 2:], ord=2, axis=1)
                 track_index = np.argmin(distance_to_tiles)
-
                 # Check if car is driving on grass by checking inside polygons
                 on_grass = not np.array([car_pos_as_point.within(polygon)
                                    for polygon in self.road_poly_shapely]).any()
                 self.driving_on_grass[car_id] = on_grass
-
                 # Find track angle of closest point
                 desired_angle = self.track[track_index][1]
-
                 # If track direction reversed, reverse desired angle
                 if self.episode_direction == 'CW':  # CW direction indicates reversed
                     desired_angle += np.pi
-
                 # Map angle to [0, 2pi] interval
                 desired_angle = (desired_angle + (2 * np.pi)) % (2 * np.pi)
-
                 # Compute smallest angle difference between desired and car
                 angle_diff = abs(desired_angle - car_angle)
                 if angle_diff > np.pi:
                     angle_diff = abs(angle_diff - 2 * np.pi)
-
                 # If car is driving backward and not on grass, penalize car. The
                 # backwards flag is set even if it is driving on grass.
                 if angle_diff > BACKWARD_THRESHOLD:
@@ -500,21 +490,28 @@ class MultiCarRacing(gym.Env, EzPickle):
                 else:
                     self.driving_backward[car_id] = False
                         
-            # Add proximity rewards
+            # New code
+            # Add rewards based on car proxomities and new terminal state when collision occurs
+            # Agent 0 is the collision-avoidance model.
+            # Agent 1 is the collision-motivated opponent.
             if np.linalg.norm(self.cars[0].hull.linearVelocity) > 0 and len(self.cars) > 1:
                 x0, y0 = self.cars[0].hull.position
                 x1, y1 = self.cars[1].hull.position
-
-                # attempt to detect collision - doesn't work
+                # Add rewards based on proximity between cars (L2 norm: Euclidean distance)
+                car0_pos = np.array(self.cars[0].hull.position).reshape((1, 2))
+                car1_pos = np.array(self.cars[1].hull.position).reshape((1, 2))
+                distance = np.linalg.norm(car0_pos - car1_pos)
+                # TODO: scale these equally using a function so that rewards are smooth
+                step_reward[0] +=  distance / 10     # reward agent 0 for being far
+                step_reward[1] +=  (1 / distance) * 10      # reward agnet 1 for being close
+                # When a collision occurs, we reach a terminal state.
                 if self.contactListener_keepref.collide and (abs(x0 - x1) <= X_THRESHOLD and abs(y0 - y1) <= Y_THRESHOLD):
+                    print("Collision occured.")
                     done = True
+                    step_reward[0] = -100   # Agent 0 receives a reward of -100 for colliding.
+                    step_reward[1] = 100   # Agent 1 receives a reward of +100 for colliding.
                 
-                # Penalize agent 0 for being far
-                self.reward[0] += (-1 * abs(x0 - x1)) + (-1 * abs(y0 - y1))
-
-                # Penalize agent 1 for being close
-                self.reward[1] += 1 / ((-1 * abs(x0 - x1)) + (-1 * abs(y0 - y1)))
-
+            # Original code
             self.prev_reward = self.reward.copy()
             if len(self.track) in self.tile_visited_count:
                 done = True
