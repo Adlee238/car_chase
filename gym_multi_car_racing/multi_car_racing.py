@@ -448,7 +448,6 @@ class MultiCarRacing(gym.Env, EzPickle):
             # self.cars[0].fuel_spent = 0.0
 
             step_reward = self.reward - self.prev_reward
-            # TODO: Add reward for getting closer to nearby car
             # Add penalty for driving backward
             for car_id, car in enumerate(self.cars):  # Enumerate through cars
 
@@ -500,8 +499,8 @@ class MultiCarRacing(gym.Env, EzPickle):
                     step_reward[car_id] -= K_BACKWARD * angle_diff
                 else:
                     self.driving_backward[car_id] = False
-                        # Add proximity rewards
-
+                        
+            # Add proximity rewards
             if np.linalg.norm(self.cars[0].hull.linearVelocity) > 0 and len(self.cars) > 1:
                 x0, y0 = self.cars[0].hull.position
                 x1, y1 = self.cars[1].hull.position

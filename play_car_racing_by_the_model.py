@@ -17,8 +17,8 @@ if __name__ == '__main__':
     play_episodes = args.episodes
 
     env = gym.make("MultiCarRacing-v0", num_agents=2, use_random_direction=False, 
-        backwards_flag=False)
-    # env = gym.make('CarRacing-v0')
+        backwards_flag=True)
+    # env = gym.make('CarRacing-v0')/Users/user/Downloads/trial_600.h5
     agents = []
     for i in range(env.num_agents):
         agents.append(CarRacingDQNAgent(epsilon=0)) # Set epsilon to 0 to ensure all actions are instructed by the agent

@@ -13,12 +13,12 @@ from common_functions import process_state_image
 from common_functions import generate_state_frame_stack_from_queue
 from gym_multi_car_racing import MultiCarRacing
 
-RENDER                        = True
+RENDER                        = False   # TODO: changed to False to make it run faster
 STARTING_EPISODE              = 1
 ENDING_EPISODE                = 1000
 SKIP_FRAMES                   = 2
 TRAINING_BATCH_SIZE           = 64
-SAVE_TRAINING_FREQUENCY       = 25
+SAVE_TRAINING_FREQUENCY       = 2  # TODO: changed to 2 cuz of how slow it is
 UPDATE_TARGET_MODEL_FREQUENCY = 5
 
 if __name__ == '__main__':
@@ -32,27 +32,31 @@ if __name__ == '__main__':
 
     env = gym.make("MultiCarRacing-v0", num_agents=2, use_random_direction=False, 
         backwards_flag=False)
-    
-    # env = gym.make("MultiCarRacing-v0", num_agents=2, direction='CCW',
-    #     use_random_direction=True, backwards_flag=True, h_ratio=0.25,
-    #     use_ego_color=False)
-    # env = gym.make('CarRacing-v0')
+    '''
+    env = gym.make("MultiCarRacing-v0", num_agents=2, direction='CCW',
+        use_random_direction=True, backwards_flag=True, h_ratio=0.25,
+        use_ego_color=False)
+    '''
 
-    # list of agents: optimized for 2, first agent is going to be trained, second is already trained
+    # list of agents: optimized for 2 agents
+    #   agent 0: collision-avoidance    (main model)
+    #   agent 1: collision-motivated    (opponent)
     agents = []
     for i in range(env.num_agents):
         if i == 0: agents.append(CarRacingDQNAgent(epsilon=args.epsilon))
         else: agents.append(CarRacingDQNAgent(epsilon=0))
 
+    # Initialize variables
     if args.model:
-        agents[0].load(args.model)
+        agents[0].load(args.model)  # collision-avoidance model
+    if args.opponent:
+        agents[1].load(args.opponent)   # collision-motivated model
     if args.start:
         STARTING_EPISODE = args.start
     if args.end:
         ENDING_EPISODE = args.end
-    if args.opponent:
-        agents[1].load(args.opponent)
 
+    # Train models for episodes e_start to e_end
     for e in range(STARTING_EPISODE, ENDING_EPISODE+1):
         init_state = env.reset()
         init_state = process_state_image(init_state)
@@ -82,8 +86,11 @@ if __name__ == '__main__':
             negative_reward_counter = negative_reward_counter + 1 if time_frame_counter > 100 and rewards[0] < 0 else 0
 
             # Extra bonus for the model if it uses full gas
+            '''
+            # TODO: commented out, not a priority for now
             if actions[0][1] == 1 and actions[0][2] == 0:
                 rewards[0] *= 0.5
+            '''
 
             total_rewards += rewards
 
@@ -92,19 +99,25 @@ if __name__ == '__main__':
             next_state_frame_stack = generate_state_frame_stack_from_queue(state_frame_stack_queue)
 
             agents[0].memorize(current_state_frame_stack[0], actions[0], rewards[0], next_state_frame_stack[0], done)
+            agents[1].memorize(current_state_frame_stack[1], actions[1], rewards[1], next_state_frame_stack[1], done)
 
-            if done or negative_reward_counter >= 25 or total_rewards[0] < 0:
-                print('Episode: {}/{}, Scores(Time Frames): {}, Total Rewards(adjusted): {:.2}, Epsilon: {:.2}'.format(e, ENDING_EPISODE, time_frame_counter, float(total_rewards[0]), float(agents[0].epsilon)))
+            if done or negative_reward_counter >= 25 or (total_rewards[0] < 0 or total_rewards[1] < 0):
+                print('Episode: {}/{} | Collision-Avoidance Model: Scores(Time Frames): {}, Total Rewards(adjusted): {:.2}, Epsilon: {:.2}'.format(e, ENDING_EPISODE, time_frame_counter, float(total_rewards[0]), float(agents[0].epsilon)))
+                print('               | Collision-Motivated Model: Scores(Time Frames): {}, Total Rewards(adjusted): {:.2}, Epsilon: {:.2}'.format(time_frame_counter, float(total_rewards[1]), float(agents[1].epsilon)))
                 break
             if len(agents[0].memory) > TRAINING_BATCH_SIZE:
                 agents[0].replay(TRAINING_BATCH_SIZE)
+            if len(agents[1].memory) > TRAINING_BATCH_SIZE:
+                agents[1].replay(TRAINING_BATCH_SIZE)
             time_frame_counter += 1
 
         if e % UPDATE_TARGET_MODEL_FREQUENCY == 0:
             agents[0].update_target_model()
+            agents[1].update_target_model()
 
         if e % SAVE_TRAINING_FREQUENCY == 0:
             print("SAVING")
-            agents[0].save('./save/trial_{}.h5'.format(e))
+            agents[0].save('./save/model_trial_{}.h5'.format(e))
+            agents[1].save('./save/opponent_trial_{}.h5'.format(e))
 
     env.close()
