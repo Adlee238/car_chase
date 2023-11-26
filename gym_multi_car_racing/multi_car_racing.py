@@ -87,7 +87,6 @@ class FrictionDetector(contactListener):
         self.env = env
         self.collide = False
     def BeginContact(self, contact):
-        self.collide = True
         self._contact(contact, True)
     def EndContact(self, contact):
         self.collide = False
@@ -104,6 +103,7 @@ class FrictionDetector(contactListener):
             tile = u2
             obj  = u1
         if not tile:
+            self.collide = True
             return
 
         tile.color[0] = ROAD_COLOR[0]
@@ -505,7 +505,7 @@ class MultiCarRacing(gym.Env, EzPickle):
                 step_reward[0] +=  distance / 10     # reward agent 0 for being far
                 step_reward[1] +=  (1 / distance) * 10      # reward agnet 1 for being close
                 # When a collision occurs, we reach a terminal state.
-                if self.contactListener_keepref.collide and (abs(x0 - x1) <= X_THRESHOLD and abs(y0 - y1) <= Y_THRESHOLD):
+                if self.contactListener_keepref.collide:
                     print("Collision occured.")
                     done = True
                     step_reward[0] = -100   # Agent 0 receives a reward of -100 for colliding.
