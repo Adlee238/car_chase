@@ -117,7 +117,7 @@ class FrictionDetector(contactListener):
         if begin:
             obj.tiles.add(tile)
             # print tile.road_friction, "ADD", len(obj.tiles)
-            if not tile.road_visited[obj.car_id]:
+            if not tile.road_visited[obj.car_id] and obj.car_id == 0:
                 tile.road_visited[obj.car_id] = True
                 self.env.tile_visited_count[obj.car_id] += 1
 
@@ -440,7 +440,7 @@ class MultiCarRacing(gym.Env, EzPickle):
         step_reward = np.zeros(self.num_agents)
         done = False
         if action is not None: # First step without action, called from reset()
-            self.reward -= 0.1
+            self.reward[1] -= 1
             # We actually don't want to count fuel spent, we want car to be faster.
             # self.reward -=  10 * self.car.fuel_spent / ENGINE_POWER
 
@@ -462,15 +462,15 @@ class MultiCarRacing(gym.Env, EzPickle):
                 # Retrieve car position
                 car_pos = np.array(car.hull.position).reshape((1, 2))
                 car_pos_as_point = Point((float(car_pos[:, 0]),
-                                          float(car_pos[:, 1])))
+                                            float(car_pos[:, 1])))
                 # Compute closest point on track to car position (l2 norm)
                 distance_to_tiles = np.linalg.norm(
                     car_pos - np.array(self.track)[:, 2:], ord=2, axis=1)
                 track_index = np.argmin(distance_to_tiles)
                 # Check if car is driving on grass by checking inside polygons
                 on_grass = not np.array([car_pos_as_point.within(polygon)
-                                   for polygon in self.road_poly_shapely]).any()
-                self.driving_on_grass[car_id] = on_grass
+                                    for polygon in self.road_poly_shapely]).any()
+                self.driving_on_grass[0] = on_grass
                 # Find track angle of closest point
                 desired_angle = self.track[track_index][1]
                 # If track direction reversed, reverse desired angle
@@ -485,10 +485,10 @@ class MultiCarRacing(gym.Env, EzPickle):
                 # If car is driving backward and not on grass, penalize car. The
                 # backwards flag is set even if it is driving on grass.
                 if angle_diff > BACKWARD_THRESHOLD:
-                    self.driving_backward[car_id] = True
+                    self.driving_backward[0] = True
                     step_reward[car_id] -= K_BACKWARD * angle_diff
                 else:
-                    self.driving_backward[car_id] = False
+                    self.driving_backward[0] = False
                         
             # New code
             # Add rewards based on car proxomities and new terminal state when collision occurs
@@ -502,14 +502,14 @@ class MultiCarRacing(gym.Env, EzPickle):
                 car1_pos = np.array(self.cars[1].hull.position).reshape((1, 2))
                 distance = np.linalg.norm(car0_pos - car1_pos)
                 # TODO: scale these equally using a function so that rewards are smooth
-                step_reward[0] +=  distance / 10     # reward agent 0 for being far
-                step_reward[1] +=  (1 / distance) * 10      # reward agnet 1 for being close
+                step_reward[0] -=  (1 / distance) * 10    # penalize agent 0 for being close
+                step_reward[1] +=  (1 / distance) * 100      # reward agnet 1 for being close
                 # When a collision occurs, we reach a terminal state.
                 if self.contactListener_keepref.collide:
                     print("Collision occured.")
                     done = True
-                    step_reward[0] = -100   # Agent 0 receives a reward of -100 for colliding.
-                    step_reward[1] = 100   # Agent 1 receives a reward of +100 for colliding.
+                    step_reward[0] = -1000   # Agent 0 receives a reward of -100 for colliding.
+                    step_reward[1] = 1000   # Agent 1 receives a reward of +100 for colliding.
                 
             # Original code
             self.prev_reward = self.reward.copy()
