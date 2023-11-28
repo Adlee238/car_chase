@@ -13,7 +13,7 @@ from common_functions import process_state_image
 from common_functions import generate_state_frame_stack_from_queue
 from gym_multi_car_racing import MultiCarRacing
 
-RENDER                        = True   # TODO: changed to False to make it run faster
+RENDER                        = False   # TODO: changed to False to make it run faster
 STARTING_EPISODE              = 1
 ENDING_EPISODE                = 1000
 SKIP_FRAMES                   = 2
@@ -43,8 +43,8 @@ if __name__ == '__main__':
     #   agent 1: collision-motivated    (opponent)
     agents = []
     for i in range(env.num_agents):
-        if i == 0: agents.append(CarRacingDQNAgent(epsilon=args.epsilon))
-        else: agents.append(CarRacingDQNAgent(epsilon=0))
+        if i == 0: agents.append(CarRacingDQNAgent(epsilon=0))
+        else: agents.append(CarRacingDQNAgent(epsilon=args.epsilon))
 
     # Initialize variables
     if args.model:
@@ -101,7 +101,7 @@ if __name__ == '__main__':
             agents[0].memorize(current_state_frame_stack[0], actions[0], rewards[0], next_state_frame_stack[0], done)
             agents[1].memorize(current_state_frame_stack[1], actions[1], rewards[1], next_state_frame_stack[1], done)
 
-            if done or negative_reward_counter >= 25 or (total_rewards[0] < 0 or total_rewards[1] < 0):
+            if done or negative_reward_counter >= 25: # or (total_rewards[0] < 0 or total_rewards[1] < 0):
                 print('Episode: {}/{} | Collision-Avoidance Model: Scores(Time Frames): {}, Total Rewards(adjusted): {:.2}, Epsilon: {:.2}'.format(e, ENDING_EPISODE, time_frame_counter, float(total_rewards[0]), float(agents[0].epsilon)))
                 print('               | Collision-Motivated Model: Scores(Time Frames): {}, Total Rewards(adjusted): {:.2}, Epsilon: {:.2}'.format(time_frame_counter, float(total_rewards[1]), float(agents[1].epsilon)))
                 break
