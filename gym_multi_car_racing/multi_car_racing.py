@@ -117,14 +117,15 @@ class FrictionDetector(contactListener):
         if begin:
             obj.tiles.add(tile)
             # print tile.road_friction, "ADD", len(obj.tiles)
-            if not tile.road_visited[obj.car_id] and obj.car_id == 0:
+            if not tile.road_visited[obj.car_id]:
                 tile.road_visited[obj.car_id] = True
                 self.env.tile_visited_count[obj.car_id] += 1
 
                 # The reward is dampened on tiles that have been visited already.
                 past_visitors = sum(tile.road_visited)-1
                 reward_factor = 1 - (past_visitors / self.env.num_agents)
-                self.env.reward[obj.car_id] += reward_factor * 1000.0/len(self.env.track)
+                if obj.car_id == 0:
+                    self.env.reward[obj.car_id] += reward_factor * 1000.0/len(self.env.track)
         else:
             obj.tiles.remove(tile)
             # print tile.road_friction, "DEL", len(obj.tiles) -- should delete to zero when on grass (this works)
@@ -503,7 +504,7 @@ class MultiCarRacing(gym.Env, EzPickle):
                 distance = np.linalg.norm(car0_pos - car1_pos)
                 # TODO: scale these equally using a function so that rewards are smooth
                 step_reward[0] -=  (1 / distance) * 10    # penalize agent 0 for being close
-                step_reward[1] +=  (1 / distance) * 100      # reward agnet 1 for being close
+                step_reward[1] +=  (1 / distance) * 100      # reward agent 1 for being close
                 # When a collision occurs, we reach a terminal state.
                 if self.contactListener_keepref.collide:
                     print("Collision occured.")

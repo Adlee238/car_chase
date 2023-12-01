@@ -13,7 +13,7 @@ from common_functions import process_state_image
 from common_functions import generate_state_frame_stack_from_queue
 from gym_multi_car_racing import MultiCarRacing
 
-RENDER                        = False   # TODO: changed to False to make it run faster
+RENDER                        = True   # TODO: changed to False to make it run faster
 STARTING_EPISODE              = 1
 ENDING_EPISODE                = 1000
 SKIP_FRAMES                   = 2
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     #   agent 1: collision-motivated    (opponent)
     agents = []
     for i in range(env.num_agents):
-        if i == 0: agents.append(CarRacingDQNAgent(epsilon=0))
+        if i == 0: agents.append(CarRacingDQNAgent(epsilon=args.epsilon))
         else: agents.append(CarRacingDQNAgent(epsilon=args.epsilon))
 
     # Initialize variables
@@ -91,7 +91,9 @@ if __name__ == '__main__':
             if actions[0][1] == 1 and actions[0][2] == 0:
                 rewards[0] *= 0.5
             '''
-
+            if actions[0][1] == 1 and actions[0][2] == 0:
+                rewards[0] += 5
+            
             total_rewards += rewards
 
             next_state = process_state_image(next_state)
