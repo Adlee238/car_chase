@@ -1,5 +1,5 @@
 # MADQL: Multi-Agent Deep Q-Learning for Autonomous Driving in Adversarial Environments
-This repository builds on [`MultiCarRacing-v0`](https://github.com/igilitschenski/multi_car_racing), a multiplayer variant of Gym's original [`CarRacing-v0` environment](https://gym.openai.com/envs/CarRacing-v0/) and [OpenAI GYM CarRacing DQN](https://github.com/andywu0913/OpenAI-GYM-CarRacing-DQN), a single player Deep Q-Network model.
+This repository builds on [`MultiCarRacing-v0`](https://github.com/igilitschenski/multi_car_racing) (Wilko Schwarting et al.), a multiplayer variant of Gym's original [`CarRacing-v0` environment](https://gym.openai.com/envs/CarRacing-v0/) and [OpenAI GYM CarRacing DQN](https://github.com/andywu0913/OpenAI-GYM-CarRacing-DQN) (Andy Wu), a single player Deep Q-Network model.
 
 Modern autonomous driving systems operate through a system of mitigating risk and avoiding collisions, but that begs the question: what if a collision is unavoidable? This project aims to bring autonomous driving systems to their very limits, by training with adversarial opponents. We present an autonomous system with advanced capability in collision avoidance, able to mitigate passenger injury even in near-imminent conditions. This will have immense utility in general autonomous driving cars, humanitarian aid vehicles, racecars, and robotic delivery systems.
 
