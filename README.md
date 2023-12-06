@@ -1,15 +1,27 @@
-# Multi-Car Racing Gym Environment
-<img width="100%" src="https://user-images.githubusercontent.com/11874191/98051650-5339d900-1e02-11eb-8b75-7f241d8687ef.gif"></img>
-This repository contains `MultiCarRacing-v0` a multiplayer variant of Gym's original [`CarRacing-v0` environment](https://gym.openai.com/envs/CarRacing-v0/).
+# MADQL: Multi-Agent Deep Q-Learning for Autonomous Driving in Adversarial Environments
+This repository builds on [`MultiCarRacing-v0`](https://github.com/igilitschenski/multi_car_racing), a multiplayer variant of Gym's original [`CarRacing-v0` environment](https://gym.openai.com/envs/CarRacing-v0/) and [OpenAI GYM CarRacing DQN](https://github.com/andywu0913/OpenAI-GYM-CarRacing-DQN), a single player Deep Q-Network model.
 
-This environment is a simple multi-player continuous contorl task. The state consists of 96x96 pixels for each player. The per-player reward is `-0.1` every timestep and `+1000/num_tiles * (num_agents-past_visitors)/num_agents` for each tile visited. For example, in a race with 2 agents, the first agent to visit a tile receives a reward of `+1000/num_tiles` and the second agent to visit the tile receives a reward of `+500/num_tiles` for that tile. Each agent can only be rewarded once for visiting a particular tile. The motivation behind this reward structure is to be sufficiently dense for simple learnability of the basic driving skill while incentivising competition.
+Modern autonomous driving systems operate through a system of mitigating risk and avoiding collisions, but that begs the question: what if a collision is unavoidable? This project aims to bring autonomous driving systems to their very limits, by training with adversarial opponents. We present an autonomous system with advanced capability in collision avoidance, able to mitigate passenger injury even in near-imminent conditions. This will have immense utility in general autonomous driving cars, humanitarian aid vehicles, racecars, and robotic delivery systems.
+
+This environment involves a multi-player car chase game with an avoidant model and a collision-motivated opponent.
+
+For more information about the project and results, reference the project video [MADQL: Multi-Agent Deep Q-Learning](https://youtu.be/RhXk6ENILLc?si=h5FFnzEWaK2QJ2wl).
 
 ## Installation
 
 ```bash
-git clone https://github.com/igilitschenski/multi_car_racing.git
-cd multi_car_racing
-pip install -e .
+git clone https://github.com/Adlee238/car_chase.git
+cd car_chase
+```
+
+## Dependencies
+
+```bash
+pip install swig
+pip intall box2d
+pip install box2d-py
+pip install pyglet==1.5.27
+pip install gym==0.21.0 
 ```
 
 ## Basic Usage
@@ -19,77 +31,34 @@ After installation, the environment can be tried out by running:
 python -m gym_multi_car_racing.multi_car_racing
 ```
 
-This will launch a two-player variant (each player in its own window) that can be controlled via the keyboard (player 1 via arrow keys and player 2 via `W`, `A`, `S`, `D`).
 
-Let's quickly walk through how this environment can be used in your code:
-
-```python
-import gym
-import gym_multi_car_racing
-
-env = gym.make("MultiCarRacing-v0", num_agents=2, direction='CCW',
-        use_random_direction=True, backwards_flag=True, h_ratio=0.25,
-        use_ego_color=False)
-
-obs = env.reset()
-done = False
-total_reward = 0
-
-while not done:
-  # The actions have to be of the format (num_agents,3)
-  # The action format for each car is as in the CarRacing-v0 environment.
-  action = my_policy(obs)
-
-  # Similarly, the structure of this is the same as in CarRacing-v0 with an
-  # additional dimension for the different agents, i.e.
-  # obs is of shape (num_agents, 96, 96, 3)
-  # reward is of shape (num_agents,)
-  # done is a bool and info is not used (an empty dict).
-  obs, reward, done, info = env.step(action)
-  total_reward += reward
-  env.render()
-
-print("individual scores:", total_reward)
+To train the model/opponent, run the following command:
+```bash
+python train_model.py [-m save/model_trial_XXX.h5] [-o save/opponent_trial_XXX.h5] [-s 1] [-e 1000] [-p 1.0]
 ```
 
-Overview of environment parameters:
+- `-m` The path to the trained model to continue training from
+- `-o` The path to the trained opponent to continue training from
+- `-s` The starting training episode, default 1
+- `-e` The ending training episode, default 1000
+- `-p` The starting epsilon for both agents, default 1.0
 
-| Parameter              | Type  | Description |
-|------------------------| :---: |-------------|
-| `num_agents`           |`int`  | Number of agents in environment (Default: `2`) |
-| `direction`            |`str`  | Winding direction of the track. Can be `'CW'` or `'CCW'` (Default: `'CCW'`)|
-| `use_random_direction` |`bool` | Randomize winding direction of the track. Disregards `direction` if enabled (Default: `True`). |
-| `backwards_flag`       |`bool` | Shows a small flag if agent driving backwards (Default: `True`). |
-| `h_ratio`              |`float`| Controls horizontal agent location in the state (Default: `0.25`) |
-| `use_ego_color`        |`bool` | In each view the ego vehicle has the same color if  activated (Default: `False`). |
 
-This environment contains the `CarRacing-v0` environment as a special case. It can be created via
-
-```python
-env = gym.make("MultiCarRacing-v0", num_agents=1, use_random_direction=False, 
-        backwards_flag=False)
+To run a saved trial, execute the following command:
+```bash
+python play_car_racing_by_the_model.py -m save/model_trial_XXX.h5 -o save/opponent_trial_XXX.h5 [-e 1]
 ```
 
-**Deprecation Warning:**  We might further simplify the environment in the future. Our current thoughts on deprecation concern the following functionalities.
+- `-m` The path to the trained model
+- `-o` The path to the trained opponent
+- `-e` The number of episodes to run
 
-* The direction related arguments (`use_random_direction` & `direction`) were initially aded to make driving fairer as the agents' spawning locations were fixed. We resolved this unfairnes by randomizing the start positions of the agents instead.
-* The impact of `backwards_flag` seems very little in practice.
-* Similarly, it was interesting to play around with placing the agent at different horizontal locations of the observation (via `h_ratio`) but the default from `CarRacing-v0` ended up working well.
-* The environment also contains some (not active) code on allowing penalization of driving backwards. We were worried that agents might go backwards to have more tiles on which they are first but it turned out not to be necessary for successfull learning. 
+## File Structure
+- `train_model.py` The training program
+- `common_functions.py` Utility functions
+- `CarRacingDQNAgent.py` The MADQL model class
+- `play_car_racing_by_the_model.py` The program for playing CarRacing by the model and opponent
+- `save/` The default folder to save the trained model
+- `gym_multi_car_racing/` The `MultiCarRacing-v0` environment
 
-We are interested in any feedback regarding these planned deprecations.
-
-## Citation
-
-If you find this environment useful, please cite our CoRL 2020 paper:
-
-```bibtex
-@inproceedings{SSG2020,
-    title={Deep Latent Competition: Learning to Race Using Visual
-      Control Policies in Latent Space},
-    author={Wilko Schwarting and Tim Seyde and Igor Gilitschenski
-      and Lucas Liebenwein and Ryan Sander and Sertac Karaman and Daniela Rus},
-    booktitle={Conference on Robot Learning},
-    year={2020}
-}
-```
+This project was created for CS221 by Harviel Arcilla, Colette Do, and Andrew Lee.
